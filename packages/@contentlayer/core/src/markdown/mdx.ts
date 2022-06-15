@@ -3,6 +3,9 @@ import { OT, pipe, T, Tagged } from '@contentlayer/utils/effect'
 import * as mdxBundler from 'mdx-bundler'
 import type { BundleMDXOptions } from 'mdx-bundler/dist/types'
 import * as path from 'node:path'
+import type { Data } from 'vfile'
+import { VFile } from 'vfile'
+import { matter } from 'vfile-matter'
 
 import type { MDXOptions, MDXProcessor } from '../plugin.js'
 
@@ -16,7 +19,7 @@ export const mdxToJs = ({
   options?: MDXOptions | MDXProcessor
   contentDirPath: string
   contentFilePath?: string
-}): T.Effect<OT.HasTracer, UnexpectedMDXError, { code: string; data: Record<string, unknown> }> =>
+}): T.Effect<OT.HasTracer, UnexpectedMDXError, { code: string; data: Data }> =>
   pipe(
     T.gen(function* ($) {
       // TODO: don't use `process.cwd()` but instead `HasCwd`
@@ -53,9 +56,13 @@ export const mdxToJs = ({
         ...restOptions,
       }
 
+      const input = new VFile({ value: mdxString, path: sourceFilePath })
+
+      matter(input)
+
       const res = yield* $(
         // FIXME: requires https://github.com/kentcdodds/mdx-bundler/pull/179
-        T.tryPromise(() => mdxBundler.bundleMDX({ source: { value: mdxString, path: sourceFilePath }, ...mdxOptions })),
+        T.tryPromise(() => mdxBundler.bundleMDX({ source: input, ...mdxOptions })),
       )
 
       if (res.errors.length > 0) {

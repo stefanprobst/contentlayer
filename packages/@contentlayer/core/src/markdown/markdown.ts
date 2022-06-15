@@ -8,6 +8,7 @@ import remarkGfm from 'remark-gfm'
 import remarkParse from 'remark-parse'
 import remark2rehype from 'remark-rehype'
 import { unified } from 'unified'
+import type { Data } from 'vfile'
 import { VFile } from 'vfile'
 import { matter } from 'vfile-matter'
 
@@ -23,7 +24,7 @@ export const markdownToHtml = ({
   options?: MarkdownOptions | MarkdownProcessor
   contentDirPath: string
   contentFilePath?: string
-}): T.Effect<OT.HasTracer & HasConsole, UnexpectedMarkdownError, { html: string; data: Record<string, unknown> }> =>
+}): T.Effect<OT.HasTracer & HasConsole, UnexpectedMarkdownError, { html: string; data: Data }> =>
   pipe(
     T.gen(function* ($) {
       if (process.env['CL_FAST_MARKDOWN']) {

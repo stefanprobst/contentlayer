@@ -4,6 +4,7 @@ import type * as mdxBundler from 'mdx-bundler/dist/types'
 import type { Options as RemarkRehypeOptions } from 'remark-rehype'
 import type { LiteralUnion } from 'type-fest'
 import type * as unified from 'unified'
+import type { Data } from 'vfile'
 
 import type { HasCwd } from './cwd.js'
 import type { DataCache } from './DataCache.js'
@@ -61,7 +62,7 @@ export type MarkdownOptions = {
 export type MarkdownProcessor = (
   markdown: string,
   sourceFilePath: string | undefined,
-) => Promise<{ html: string; data?: Record<string, unknown> }>
+) => Promise<{ html: string; data?: Data }>
 
 export type MDXOptions = {
   remarkPlugins?: unified.Pluggable[]
@@ -110,10 +111,7 @@ export type MDXOptions = {
  * ```
 
  */
-export type MDXProcessor = (
-  mdx: string,
-  sourceFilePath: string | undefined,
-) => Promise<{ code: string; data?: Record<string, unknown> }>
+export type MDXProcessor = (mdx: string, sourceFilePath: string | undefined) => Promise<{ code: string; data?: Data }>
 
 export type DateOptions = {
   /**
