@@ -61,7 +61,7 @@ export const mdxToJs = ({
       matter(input)
 
       const res = yield* $(
-        // FIXME: requires https://github.com/kentcdodds/mdx-bundler/pull/179
+        // @ts-expect-error FIXME: requires https://github.com/kentcdodds/mdx-bundler/pull/179
         T.tryPromise(() => mdxBundler.bundleMDX({ source: input, ...mdxOptions })),
       )
 
