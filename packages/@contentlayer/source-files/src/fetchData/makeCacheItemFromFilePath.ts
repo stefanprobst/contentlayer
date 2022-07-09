@@ -4,7 +4,8 @@ import { filePathJoin } from '@contentlayer/utils'
 import type { HasConsole } from '@contentlayer/utils/effect'
 import { identity, O, OT, pipe, T, These } from '@contentlayer/utils/effect'
 import { fs } from '@contentlayer/utils/node'
-import matter from 'gray-matter'
+import { VFile } from 'vfile'
+import { matter } from 'vfile-matter'
 import yaml from 'yaml'
 
 import { FetchDataError } from '../errors/index.js'
@@ -148,8 +149,8 @@ const processRawContent = ({
           const markdown = yield* $(parseMarkdown({ markdownString: fileContent, documentFilePath: relativeFilePath }))
           return identity<RawContentMarkdown>({
             kind: 'markdown',
-            fields: markdown.data,
-            body: markdown.content,
+            fields: markdown.data.matter as Record<string, any>,
+            body: String(markdown),
             rawDocumentContent: fileContent,
           })
         }
@@ -157,8 +158,8 @@ const processRawContent = ({
           const markdown = yield* $(parseMarkdown({ markdownString: fileContent, documentFilePath: relativeFilePath }))
           return identity<RawContentMDX>({
             kind: 'mdx',
-            fields: markdown.data,
-            body: markdown.content,
+            fields: markdown.data.matter as Record<string, any>,
+            body: String(markdown),
             rawDocumentContent: fileContent,
           })
         }
@@ -214,13 +215,13 @@ const parseMarkdown = ({
 }: {
   markdownString: string
   documentFilePath: PosixFilePath
-}): T.Effect<
-  unknown,
-  FetchDataError.InvalidMarkdownFileError | FetchDataError.InvalidFrontmatterError,
-  matter.GrayMatterFile<string>
-> =>
+}): T.Effect<unknown, FetchDataError.InvalidMarkdownFileError | FetchDataError.InvalidFrontmatterError, VFile> =>
   T.tryCatch(
-    () => matter(markdownString),
+    () => {
+      const vfile = new VFile({ value: markdownString })
+      matter(vfile, { strip: true })
+      return vfile
+    },
     (error: any) => {
       if (error.name === 'YAMLException') {
         return new FetchDataError.InvalidFrontmatterError({ error, documentFilePath })

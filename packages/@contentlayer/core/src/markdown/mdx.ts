@@ -4,59 +4,68 @@ import * as mdxBundler from 'mdx-bundler'
 import type { BundleMDXOptions } from 'mdx-bundler/dist/types'
 import * as path from 'node:path'
 
-import type { RawDocumentData } from '../data-types.js'
-import type { MDXOptions } from '../plugin.js'
-import { addRawDocumentToVFile } from './unified.js'
+import type { MDXOptions, MDXProcessor } from '../plugin.js'
 
-export const bundleMDX = ({
+export const mdxToJs = ({
   mdxString,
   options,
   contentDirPath,
-  rawDocumentData,
+  contentFilePath,
 }: {
   mdxString: string
-  options?: MDXOptions
+  options?: MDXOptions | MDXProcessor
   contentDirPath: string
-  rawDocumentData: RawDocumentData
-}): T.Effect<OT.HasTracer, UnexpectedMDXError, string> =>
+  contentFilePath?: string
+}): T.Effect<OT.HasTracer, UnexpectedMDXError, { code: string; data: Record<string, unknown> }> =>
   pipe(
     T.gen(function* ($) {
-      // TODO should be fixed in `mdx-bundler`
-      if (mdxString.length === 0) {
-        return ''
+      // TODO: don't use `process.cwd()` but instead `HasCwd`
+      function getAbsoluteContentDirPath() {
+        return path.isAbsolute(contentDirPath) ? contentDirPath : path.join(process.cwd(), contentDirPath)
       }
-      const { rehypePlugins, remarkPlugins, cwd: cwd_, ...restOptions } = options ?? {}
 
-      const getCwdFromContentDirPath = () =>
-        // TODO don't use `process.cwd()` but instead `HasCwd`
-        path.isAbsolute(contentDirPath) ? contentDirPath : path.join(process.cwd(), contentDirPath)
-      const cwd = cwd_ ?? getCwdFromContentDirPath()
+      const sourceFilePath =
+        contentFilePath != null ? path.join(getAbsoluteContentDirPath(), contentFilePath) : undefined
+
+      if (typeof options === 'function') {
+        const res = yield* $(T.tryPromise(() => options(mdxString, sourceFilePath)))
+        return { code: res.code, data: res.data ?? {} }
+      }
+
+      const {
+        remarkPlugins,
+        remarkRehypeOptions,
+        rehypePlugins,
+        recmaPlugins,
+        cwd = getAbsoluteContentDirPath(),
+        ...restOptions
+      } = options ?? {}
 
       const mdxOptions: BundleMDXOptions<any> = {
-        mdxOptions: (opts) => {
+        mdxOptions(opts) {
+          opts.remarkPlugins = [...(opts.remarkPlugins ?? []), ...(remarkPlugins ?? [])]
+          opts.remarkRehypeOptions = { ...opts.remarkRehypeOptions, ...remarkRehypeOptions }
           opts.rehypePlugins = [...(opts.rehypePlugins ?? []), ...(rehypePlugins ?? [])]
-          opts.remarkPlugins = [
-            addRawDocumentToVFile(rawDocumentData),
-            ...(opts.remarkPlugins ?? []),
-            ...(remarkPlugins ?? []),
-          ]
+          opts.recmaPlugins = [...(opts.recmaPlugins ?? []), ...(recmaPlugins ?? [])]
           return opts
         },
         cwd,
-        // NOTE `restOptions` should be spread at the end to allow for user overrides
         ...restOptions,
       }
 
-      const res = yield* $(T.tryPromise(() => mdxBundler.bundleMDX({ source: mdxString, ...mdxOptions })))
+      const res = yield* $(
+        // FIXME: requires https://github.com/kentcdodds/mdx-bundler/pull/179
+        T.tryPromise(() => mdxBundler.bundleMDX({ source: { value: mdxString, path: sourceFilePath }, ...mdxOptions })),
+      )
 
       if (res.errors.length > 0) {
         return yield* $(T.fail(res.errors))
       }
 
-      return res.code
+      return { code: res.code, data: { matter: res.frontmatter } }
     }),
     T.mapError((error) => new UnexpectedMDXError({ error })),
-    OT.withSpan('@contentlayer/core/markdown:bundleMDX'),
+    OT.withSpan('@contentlayer/core/markdown:mdxToJs'),
   )
 
 export class UnexpectedMDXError extends Tagged('UnexpectedMDXError')<{ readonly error: unknown }> {

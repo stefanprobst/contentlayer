@@ -1,4 +1,4 @@
-import type { DateOptions, MarkdownOptions, MarkdownUnifiedBuilderCallback, MDXOptions } from '@contentlayer/core'
+import type { DateOptions, MarkdownOptions, MarkdownProcessor, MDXOptions, MDXProcessor } from '@contentlayer/core'
 
 import type { DocumentContentType } from './schema/defs/index.js'
 
@@ -22,8 +22,8 @@ export type RawDocumentData = {
 }
 
 export type PluginOptions = {
-  markdown?: MarkdownOptions | MarkdownUnifiedBuilderCallback
-  mdx?: MDXOptions
+  markdown?: MarkdownOptions | MarkdownProcessor
+  mdx?: MDXOptions | MDXProcessor
   fieldOptions?: FieldOptions
   date?: DateOptions
   disableImportAliasWarning?: boolean

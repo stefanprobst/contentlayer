@@ -1,6 +1,7 @@
 import type { Thunk } from '@contentlayer/utils'
 import type { E, HasClock, HasConsole, OT, S, T } from '@contentlayer/utils/effect'
 import type * as mdxBundler from 'mdx-bundler/dist/types'
+import type { Options as RemarkRehypeOptions } from 'remark-rehype'
 import type { LiteralUnion } from 'type-fest'
 import type * as unified from 'unified'
 
@@ -17,56 +18,102 @@ export type PluginExtensions = {
 }
 
 export type PluginOptions = {
-  markdown: MarkdownOptions | MarkdownUnifiedBuilderCallback | undefined
-  mdx: MDXOptions | undefined
+  markdown: MarkdownOptions | MarkdownProcessor | undefined
+  mdx: MDXOptions | MDXProcessor | undefined
   date: DateOptions | undefined
   fieldOptions: FieldOptions
   disableImportAliasWarning: boolean
 }
 
+export type MarkdownOptions = {
+  remarkPlugins?: unified.Pluggable[]
+  remarkRehypeOptions?: RemarkRehypeOptions
+  rehypePlugins?: unified.Pluggable[]
+}
+
 /**
- * Please make sure to use the following Unified plugins for Contentlayer to work properly:
+ * Please make sure to use the following processing pipeline for Contentlayer to work properly:
  *
  * @example
  * ```ts
  * import rehypeStringify from 'rehype-stringify'
  * import remarkFrontmatter from 'remark-frontmatter'
+ * import remarkGfm from 'remark-gfm'
  * import remarkParse from 'remark-parse'
  * import remark2rehype from 'remark-rehype'
+ * import { unified } from 'unified'
  *
  * makeSource({
  *   // your other options ...
- *   markdown: (builder) => {
- *     builder
- *       .use(remarkFrontmatter)
+ *   async markdown(markdown, sourceFilePath) {
+ *     const processor = unified()
  *       .use(remarkParse)
+ *       .use(remarkFrontmatter)
+ *       .use(remarkGfm)
  *       .use(remark2rehype)
  *       .use(rehypeStringify)
+ *     const result = await processor.process({ value: markdown, path: sourceFilePath })
+ *     return { html: String(result), data: result.data }
  *   }
  * })
  * ```
  */
-export type MarkdownUnifiedBuilderCallback = (builder: unified.Processor) => void
-
-export type MarkdownOptions = {
-  remarkPlugins?: unified.Pluggable[]
-  rehypePlugins?: unified.Pluggable[]
-}
+export type MarkdownProcessor = (
+  markdown: string,
+  sourceFilePath: string | undefined,
+) => Promise<{ html: string; data?: Record<string, unknown> }>
 
 export type MDXOptions = {
   remarkPlugins?: unified.Pluggable[]
+  remarkRehypeOptions?: RemarkRehypeOptions
   rehypePlugins?: unified.Pluggable[]
-  /**  */
-  /**
-   * This allows you to modify the built-in MDX configuration (passed to @mdx-js/mdx compile).
-   * This can be helpful for specifying your own remarkPlugins/rehypePlugins.
-   *
-   * If you're providing `mdxOptions` then `rehypePlugins` and `remarkPlugins` will be ignored.
-   */
-  mdxOptions?: MDXBundlerMDXOptions
+  recmaPlugins?: unified.Pluggable[]
 } & Omit<mdxBundler.BundleMDXOptions<any>, 'mdxOptions'>
 
-export type MDXBundlerMDXOptions = mdxBundler.BundleMDXOptions<any>['mdxOptions']
+/**
+ * Please make sure to use one of the following processing pipelines for Contentlayer to work properly:
+ *
+ * @example
+ * ```ts
+ * import remarkGfm from 'remark-gfm'
+ * import { bundleMDX } from 'mdx-bundler'
+ *
+ * makeSource({
+ *   // your other options ...
+ *   async markdown(markdown, sourceFilePath) {
+ *     const result = await bundleMDX({ source: { value: markdown, path: sourceFilePath } }, {
+ *       mdxOptions(options) {
+ *         options.remarkPlugins = [...options.remarkPlugins, remarkGfm]
+ *         return options
+ *       }
+ *     })
+ *     return { code: result.code }
+ *   }
+ * })
+ * ```
+ *
+ * @example
+ * ```ts
+ * import remarkFrontmatter from 'remark-frontmatter'
+ * import remarkGfm from 'remark-gfm'
+ * import { compile } from '@mdx-js/mdx'
+ *
+ * makeSource({
+ *   // your other options ...
+ *   async markdown(markdown, sourceFilePath) {
+ *     const result = await compile({ value: markdown, path: sourceFilePath }, {
+ *       remarkPlugins: [remarkFrontmatter, remarkGfm],
+ *     })
+ *     return { code: String(result), data: result.data }
+ *   }
+ * })
+ * ```
+
+ */
+export type MDXProcessor = (
+  mdx: string,
+  sourceFilePath: string | undefined,
+) => Promise<{ code: string; data?: Record<string, unknown> }>
 
 export type DateOptions = {
   /**
@@ -123,8 +170,8 @@ export type MakeSourcePlugin<TArgs extends PartialArgs> = (
 ) => Promise<SourcePlugin>
 
 export type PartialArgs = {
-  markdown?: MarkdownOptions | MarkdownUnifiedBuilderCallback | undefined
-  mdx?: MDXOptions | undefined
+  markdown?: MarkdownOptions | MarkdownProcessor | undefined
+  mdx?: MDXOptions | MDXProcessor | undefined
   date?: DateOptions | undefined
   fieldOptions?: Partial<FieldOptions>
   extensions?: PluginExtensions

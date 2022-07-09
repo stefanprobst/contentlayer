@@ -174,22 +174,27 @@ const getDataForFieldDef = ({
         )
       case 'date':
         return new Date(rawFieldData)
-      case 'markdown':
-        const html = yield* $(
-          core.markdownToHtml({ mdString: rawFieldData, options: options?.markdown, rawDocumentData: {} }),
+      case 'markdown': {
+        const { html, data } = yield* $(
+          core.markdownToHtml({
+            mdString: rawFieldData,
+            options: options?.markdown,
+            contentDirPath: 'contentful://',
+          }),
         )
-        return <core.Markdown>{ raw: rawFieldData, html }
+        return <core.Markdown>{ raw: rawFieldData, html, data }
+      }
       // NOTE `mdx` support for Contentful is experimental and not clearly defined
-      case 'mdx':
-        const code = yield* $(
-          core.bundleMDX({
+      case 'mdx': {
+        const { code, data } = yield* $(
+          core.mdxToJs({
             mdxString: rawFieldData,
             options: options?.mdx,
             contentDirPath: 'contentful://',
-            rawDocumentData: {},
           }),
         )
-        return <core.MDX>{ raw: rawFieldData, code }
+        return <core.MDX>{ raw: rawFieldData, code, data }
+      }
       case 'string':
         // e.g. for images
         if (rawFieldDataIsAsset(rawFieldData)) {

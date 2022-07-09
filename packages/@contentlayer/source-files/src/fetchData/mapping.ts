@@ -258,51 +258,58 @@ const getDataForFieldDef = ({
         return value
       case 'markdown': {
         const isBodyField = fieldDef.name === options.fieldOptions.bodyFieldName
-        const rawDocumentData = yield* $(getFromDocumentContext('rawDocumentData'))
         // NOTE for the body field, we're passing the entire document file contents to MDX (e.g. in case some remark/rehype plugins need access to the frontmatter)
-        // TODO we should come up with a better way to do this
         if (isBodyField) {
           const rawContent = yield* $(getFromDocumentContext('rawContent'))
           if (rawContent.kind !== 'markdown' && rawContent.kind !== 'mdx') return utils.assertNever(rawContent)
 
-          const html = yield* $(
+          const { html, data } = yield* $(
             core.markdownToHtml({
               mdString: rawContent.rawDocumentContent,
               options: options?.markdown,
-              rawDocumentData,
+              contentDirPath,
+              contentFilePath: relativeFilePath,
             }),
           )
-          return identity<core.Markdown>({ raw: rawFieldData, html })
+          return identity<core.Markdown>({ raw: rawFieldData, html, data })
         } else {
-          const html = yield* $(
-            core.markdownToHtml({ mdString: rawFieldData, options: options?.markdown, rawDocumentData }),
+          const { html, data } = yield* $(
+            core.markdownToHtml({
+              mdString: rawFieldData,
+              options: options?.markdown,
+              contentDirPath,
+              contentFilePath: relativeFilePath,
+            }),
           )
-          return identity<core.Markdown>({ raw: rawFieldData, html })
+          return identity<core.Markdown>({ raw: rawFieldData, html, data })
         }
       }
       case 'mdx': {
         const isBodyField = fieldDef.name === options.fieldOptions.bodyFieldName
-        const rawDocumentData = yield* $(getFromDocumentContext('rawDocumentData'))
         // NOTE for the body field, we're passing the entire document file contents to MDX (e.g. in case some remark/rehype plugins need access to the frontmatter)
-        // TODO we should come up with a better way to do this
         if (isBodyField) {
           const rawContent = yield* $(getFromDocumentContext('rawContent'))
           if (rawContent.kind !== 'mdx' && rawContent.kind !== 'markdown') return utils.assertNever(rawContent)
 
-          const code = yield* $(
-            core.bundleMDX({
+          const { code, data } = yield* $(
+            core.mdxToJs({
               mdxString: rawContent.rawDocumentContent,
               options: options?.mdx,
               contentDirPath,
-              rawDocumentData,
+              contentFilePath: relativeFilePath,
             }),
           )
-          return identity<core.MDX>({ raw: rawFieldData, code })
+          return identity<core.MDX>({ raw: rawFieldData, code, data })
         } else {
-          const code = yield* $(
-            core.bundleMDX({ mdxString: rawFieldData, options: options?.mdx, contentDirPath, rawDocumentData }),
+          const { code, data } = yield* $(
+            core.mdxToJs({
+              mdxString: rawFieldData,
+              options: options?.mdx,
+              contentDirPath,
+              contentFilePath: relativeFilePath,
+            }),
           )
-          return identity<core.MDX>({ raw: rawFieldData, code })
+          return identity<core.MDX>({ raw: rawFieldData, code, data })
         }
       }
       case 'boolean':
