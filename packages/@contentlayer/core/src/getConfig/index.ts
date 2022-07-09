@@ -2,6 +2,7 @@ import type { E } from '@contentlayer/utils/effect'
 import { Array, Chunk, O, OT, pipe, S, T } from '@contentlayer/utils/effect'
 import type { GetContentlayerVersionError } from '@contentlayer/utils/node'
 import { fs } from '@contentlayer/utils/node'
+import { createTsConfigPathsPlugin } from '@stefanprobst/ts-script'
 import * as path from 'node:path'
 
 import type { HasCwd } from '../cwd.js'
@@ -71,7 +72,7 @@ export const getConfigWatch = ({
           logLevel: 'silent',
           metafile: true,
           absWorkingDir: cwd,
-          plugins: [contentlayerGenPlugin(), makeAllPackagesExternalPlugin(configPath)],
+          plugins: [createTsConfigPathsPlugin(), contentlayerGenPlugin(), makeAllPackagesExternalPlugin(configPath)],
         }),
         S.mapEffectEitherRight((result) => getConfigFromResult({ result, configPath })),
       ),

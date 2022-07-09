@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "@contentlayer/utils": "workspace:*",
+    "@stefanprobst/ts-script": "^2.1.0",
     "camel-case": "^4.1.2",
     "comment-json": "^4.2.2",
     "date-fns": "2.x",

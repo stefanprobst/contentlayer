@@ -1638,6 +1638,7 @@ __metadata:
   resolution: "@contentlayer/core@workspace:packages/@contentlayer/core"
   dependencies:
     "@contentlayer/utils": "workspace:*"
+    "@stefanprobst/ts-script": ^2.1.0
     "@types/source-map-support": ^0.5.4
     camel-case: ^4.1.2
     comment-json: ^4.2.2
@@ -3686,6 +3687,28 @@ __metadata:
     js-yaml: ^4.0.0
     lodash: ^4.17.21
   checksum: accca336d89f2b8f71b028ee43587d2a71b9b5d3b3e0b66bbb081ef60ee7cffc8e6f822fbd89ed3593b3da5297a7948f2dc499e837a4f78f0a6cb18acaa4b911
+  languageName: node
+  linkType: hard
+
+"@stefanprobst/log@npm:^1.0.3":
+  version: 1.0.3
+  resolution: "@stefanprobst/log@npm:1.0.3"
+  checksum: c00c6e4b7973d9871235dfafd2937620a8582023102b8391d569159191ed7ab48917b14421e6a7a7c1784f60f548df27d9e30529d1d0028527e5a0821e298fef
+  languageName: node
+  linkType: hard
+
+"@stefanprobst/ts-script@npm:^2.1.0":
+  version: 2.1.0
+  resolution: "@stefanprobst/ts-script@npm:2.1.0"
+  dependencies:
+    "@stefanprobst/log": ^1.0.3
+    esbuild: ^0.14.46
+    fast-glob: ^3.2.11
+    json5: ^2.2.1
+    mri: ^1.2.0
+  bin:
+    run-ts-script: src/cli.js
+  checksum: 46dcb9be41f376d03a8c581eb320c396a4c9d8c77f9f3d1ff7d440cb2b2174583b69ef69378aff0bcbc4dfe6031ed09035355581eaae9bb9e1bc2aee48e16bbc
   languageName: node
   linkType: hard
 
@@ -13338,7 +13361,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mri@npm:^1.1.0":
+"mri@npm:^1.1.0, mri@npm:^1.2.0":
   version: 1.2.0
   resolution: "mri@npm:1.2.0"
   checksum: 83f515abbcff60150873e424894a2f65d68037e5a7fcde8a9e2b285ee9c13ac581b63cfc1e6826c4732de3aeb84902f7c1e16b7aff46cd3f897a0f757a894e85
