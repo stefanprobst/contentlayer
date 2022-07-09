@@ -16,7 +16,7 @@ import { _jsx_runtime } from './jsx-runtime.cjs'
 const getMDXComponent = (code: string, globals: Record<string, unknown> = {}): React.ComponentType<any> => {
   const scope = { React, ReactDOM, _jsx_runtime, ...globals }
   const fn = new Function(...Object.keys(scope), code)
-  return fn(...Object.values(scope)).default
+  return fn(...Object.values(scope))
 }
 
 export const useMDXComponent = (code: string, globals: Record<string, unknown> = {}): React.ComponentType<any> => {
